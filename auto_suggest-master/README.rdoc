@@ -1,0 +1,7 @@
+`rails s` to start the server at http://localhost:3000
+
+`GET /words/complete` with the query parameter `query` returns the most likely word completion to your query, e.g.
+
+`GET /words/complete?query=tes` returns `{"word": "test"}`
+
+Root page is `web#index` and the view can be found under `app/views/words/index.html.erb`
