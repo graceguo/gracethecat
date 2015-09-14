@@ -2,7 +2,7 @@
 
 var SuggestionBox = React.createClass({
     render: function() {
-        console.log(this.props.data);
+
         var currentPosition = this.props.position;
         var divStyle = {};
         if (currentPosition) {
@@ -19,13 +19,14 @@ var SuggestionBox = React.createClass({
 var CommentBox = React.createClass({
     suggestionCache: {},
 
-    getSuggestionData: function(q, comment, position) {
+    getSuggestionData: function(q, comment) {
         if (this.suggestionCache[q]) {
             this.setState({
+                comment: comment,
                 suggestion: this.suggestionCache[q]
             });
         } else {
-            console.log('query=' +q);
+
             $.ajax({
                 url: this.props.url + 'query=' + q,
                 dataType: 'json',
@@ -35,6 +36,7 @@ var CommentBox = React.createClass({
                     if (suggestion) {
                         this.cache(q, suggestion);
                         this.setState({
+                            comment: comment,
                             suggestion: suggestion
                         });
                     } else {
@@ -56,19 +58,9 @@ var CommentBox = React.createClass({
     },
 
     handleCommentInput: function(e) {
-        var content = e.target.textContent;
-        var prefix = content.split(/\W/).slice(-1);
-
-        if (e.keyCode == 9 && this.state.suggestion) {
-            this.setState({
-                comment: content + this.state.suggestion.substring(prefix.length),
-                suggestion: ''
-            });
-
-            return
-        }
-
-        if (prefix[0] && prefix[0].length > 2) {
+        var content = e.target.value;
+        var prefix = content.split(/\W/).slice(-1)[0];
+        if (prefix && prefix.length > 2) {
             this.getSuggestionData(prefix, content);
         } else {
             this.setState({
@@ -78,13 +70,21 @@ var CommentBox = React.createClass({
         }
     },
 
-    updatePosition: function(el) {
-        this.setState({
-            position: {
-                left: el.target.pageX,
-                top: el.target.pageY
-            }
-        });
+    handleKeyPress: function(e) {
+        var key = e.keyCode;
+        if (key !== 9) {
+            return;
+
+        } else if (key === 9 && this.state.suggestion) {
+            e.preventDefault();
+            var content = e.target.value;
+            var prefix = content.split(/\W/).slice(-1)[0];
+            var updatedComment = content + this.state.suggestion.substring(prefix.length);
+            this.setState({
+                comment: updatedComment,
+                suggestion: ''
+            });
+        }
     },
 
     getInitialState: function() {
@@ -94,12 +94,11 @@ var CommentBox = React.createClass({
     render: function() {
         return (
             <div className="comment-container">
-                <div ref="commentBox"
-                     contentEditable={true}
+                <textarea ref="commentBox"
                       className="comment-box"
                       value={this.state.comment}
-                      onKeyUp={this.handleCommentInput}
-
+                      onChange={this.handleCommentInput}
+                      onKeyDown={this.handleKeyPress}
                     />
                 <SuggestionBox ref="suggestionBox"
                                data={this.state.suggestion}
